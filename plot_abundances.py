@@ -14,6 +14,8 @@ plt.rc('font', family='STIXgeneral')
 data_dir = 'C:\\Users\\dubay.11\\Data'
 data_path = Path(data_dir)
 apokasc_file = 'APOKASC_cat_v6.7.2.fits'
+astronn_file = 'apogee_astroNN-DR17'
+starhorse_file = 'APOGEE_DR17_EDR3_STARHORSE_v2'
 
 data, hdr = getdata(data_path / apokasc_file, 1, header=True)
 
