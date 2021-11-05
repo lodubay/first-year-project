@@ -1,8 +1,8 @@
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from astropy.io.fits import getdata
-from astropy.table import Table, join
+import matplotlib.pyplot as plt
+from astropy.table import Table
 
 # Paths
 data_dir = 'C:\\Users\\dubay.11\\Data'
@@ -43,8 +43,8 @@ age_err2_col = 'APOKASC2_AGE_PERR' # error in positive direction
 # DataFrame with only ages
 ages = apokasc_df[apokasc_df[age_col] > 0]
 ages = ages[[id_col, loc_col, age_col, age_err1_col, age_err2_col]]
-ages.columns = ['id', 'loc_id', 'apokasc2_age', 'apokask2_age_err1', 
-                'apokask2_age_err2']
+ages.columns = ['id', 'loc_id', 'apokasc2_age', 'apokasc2_age_err1', 
+                'apokasc2_age_err2']
 ages['loc_id'] = ages['loc_id'].astype(int)
 ages.set_index(['id', 'loc_id'], inplace=True)
 
@@ -65,22 +65,25 @@ astroNN_ages = astroNN_ages[[id_col, loc_col, age_col, age_err_col]]
 astroNN_ages.columns = ['id', 'loc_id', 'astroNN_age', 'astroNN_age_err']
 astroNN_ages['loc_id'] = astroNN_ages['loc_id'].astype(int)
 astroNN_ages.set_index(['id', 'loc_id'], inplace=True)
+
+# Combined age data
+print('Joining datasets...')
 ages = ages.join(astroNN_ages, how='inner')
 print(ages)
-# ages = ages.rename(columns={'age_lowess_correct': 'astroNN_age', 
-#                             'age_total_error': 'astroNN_age_err'})
-# print(ages)
 
-# for i, id in enumerate(ages.index):
-#     if id in ages.index[:i]:
-#         print(ages.loc[id, ['apokasc2_age', 'astroNN_age', 'astroNN_age_err']])
-
-# astroNN_ages = data[data[age_col] > 0][[id_col, age_col, age_err_col]]
-# astroNN_ages.rename_column(id_col, 'ID')
-# print(astroNN_ages)
-
-# combined_ages = join(apokasc_ages, astroNN_ages, keys='ID')
-# print(combined_ages)
+### Plot
+fig, ax = plt.subplots(dpi=300)
+ax.scatter(np.array([1,2,3,4,5]), np.array([1,2,3,4,5]))
+# ax.scatter(ages['apokasc2_age'].iloc[:100], ages['astroNN_age'].iloc[:100], s=1, c='k')
+# ax.errorbar(ages['apokasc2_age'], ages['astroNN_age'],
+#             xerr=[ages['apokasc2_age_err1'], ages['apokasc2_age_err2']],
+#             yerr=ages['astroNN_age_err'],
+#             linestyle='none', elinewidth=1, color='k')
+ax.set_xlabel('APOKASC2 Age [Gyr]')
+ax.set_ylabel('astroNN Age [Gyr]')
+plt.savefig('ages.png', dpi=300)
+plt.show()
+print('hi')
 
 ### StarHorse DR17 catalog
 # data = Table.read(data_path / starhorse_file, format='fits')
