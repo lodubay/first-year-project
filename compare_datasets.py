@@ -4,6 +4,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from astropy.table import Table
 
+# Plot settings
+plt.rc(('xtick', 'ytick'), direction='in')
+plt.rc('xtick', top=True)
+plt.rc('ytick', right=True)
+plt.rc('font', family='STIXgeneral')
+
 # Paths
 data_dir = 'C:\\Users\\dubay.11\\Data'
 data_path = Path(data_dir)
@@ -69,21 +75,54 @@ astroNN_ages.set_index(['id', 'loc_id'], inplace=True)
 # Combined age data
 print('Joining datasets...')
 ages = ages.join(astroNN_ages, how='inner')
+# Remove infinities
+ages.replace([np.inf, -np.inf], np.nan, inplace=True)
+ages = ages.dropna(how='any')
 print(ages)
 
-### Plot
-fig, ax = plt.subplots(dpi=300)
-ax.scatter(np.array([1,2,3,4,5]), np.array([1,2,3,4,5]))
-# ax.scatter(ages['apokasc2_age'].iloc[:100], ages['astroNN_age'].iloc[:100], s=1, c='k')
+# Average age error
+apokasc_rms_err = [[np.sqrt(np.mean(ages['apokasc2_age_err1']**2))], 
+                   [np.sqrt(np.mean(ages['apokasc2_age_err2']**2))]]
+astroNN_rms_err = np.sqrt(np.mean(ages['astroNN_age_err']**2))
+
+### Plot APOKASC age vs astroNN age
+fig, axs = plt.subplots(1, 2, figsize=(8, 4), dpi=300)
+ax = axs[0]
+ax.plot([0, 14], [0, 14], linestyle='--')
+ax.scatter(ages['apokasc2_age'], ages['astroNN_age'], s=0.5, c='k')
 # ax.errorbar(ages['apokasc2_age'], ages['astroNN_age'],
 #             xerr=[ages['apokasc2_age_err1'], ages['apokasc2_age_err2']],
 #             yerr=ages['astroNN_age_err'],
-#             linestyle='none', elinewidth=1, color='k')
+#             linestyle='none', elinewidth=1, color='k', alpha=0.05)
+# plot RMS error
+ax.errorbar(12, 1, xerr=apokasc_rms_err, yerr=astroNN_rms_err,
+            color='k', capsize=2)
 ax.set_xlabel('APOKASC2 Age [Gyr]')
 ax.set_ylabel('astroNN Age [Gyr]')
-plt.savefig('ages.png', dpi=300)
+ax.set_xlim((-1, 15))
+ax.set_ylim((-1, 15))
+
+# Histrogram of age differences
+ax = axs[1]
+# xmin = -1
+# xmax = 1.
+# bins = np.logspace(xmin, xmax, 20)
+# ax.hist(ages['astroNN_age'] / ages['apokasc2_age'], color='k', bins=bins)
+# ax.set_xscale('log')
+# ax.set_xlim((10**xmin, 10**xmax))
+# ax.set_xlabel('astroNN Age / APOKASC2 Age')
+xmin = -14
+xmax = 14
+bins = np.linspace(xmin, xmax, 29)
+ax.hist(ages['astroNN_age'] - ages['apokasc2_age'], 
+        color='k', bins=bins, rwidth=0.9)
+ax.grid(which='major', axis='y', color='w')
+ax.set_xlim((xmin, xmax))
+ax.set_yscale('log')
+ax.set_xlabel('astroNN Age - APOKASC2 Age [Gyr]')
+ax.set_ylabel('Count')
+plt.savefig('age_comparison.png', dpi=300)
 plt.show()
-print('hi')
 
 ### StarHorse DR17 catalog
 # data = Table.read(data_path / starhorse_file, format='fits')
