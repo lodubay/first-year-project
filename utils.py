@@ -260,6 +260,9 @@ def plot_rms_err(ax, xerrs, yerrs, loc='upper left'):
     # If array is 2D, that means the positive and negative errors are separate
     xerrs = np.array(xerrs)
     yerrs = np.array(yerrs)
+    # drop nan
+    xerrs = xerrs[~np.isnan(xerrs)]
+    yerrs = yerrs[~np.isnan(yerrs)]
     if len(xerrs.shape) > 1:
         xerr = rms(xerrs, axis=0)[:,np.newaxis]
     else:
