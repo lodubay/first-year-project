@@ -190,7 +190,7 @@ def get_discrepant_metallicities(cat, diff_cut=-0.5):
                  (pd.notna(cat['ASTRONN_FE_H_ERR'])) &
                  (pd.notna(cat['DR16_M_H_COR'])) &
                  (pd.notna(cat['DR16_M_H_COR_ERR']))].copy()
-    metals['M_H_DIFF'] = metals['ASTRONN_FE_H'] - metals['DR16_MH_COR']
+    metals['M_H_DIFF'] = metals['ASTRONN_FE_H'] - metals['DR16_M_H_COR']
     metals['M_H_DIFF_ERR'] = quad_add(metals['ASTRONN_FE_H_ERR'],
                                       metals['DR16_M_H_COR_ERR'])
     low_fe = metals[metals['M_H_DIFF'] < diff_cut].copy()
