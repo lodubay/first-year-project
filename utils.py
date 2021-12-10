@@ -74,7 +74,8 @@ def import_catalogs(data_path, verb=True):
                     'GAIA_PHOT_G_MEAN_MAG_DR2', 'GAIA_PHOT_BP_MEAN_MAG_DR2',
                     'GAIA_PHOT_RP_MEAN_MAG_DR2', 'APOKASC2_AV',
                     'DR16_LOGG_COR', 'DR16_LOGG_COR_ERR', 'DR16_TEFF_COR',
-                    'DR16_TEFF_COR_ERR', 'DR16_TI_FE', 'DR16_TI_FE_ERR']
+                    'DR16_TEFF_COR_ERR', 'DR16_TI_FE', 'DR16_TI_FE_ERR',
+                    'TARGFLAGS', 'ASPCAPFLAGS', 'GAIA_L', 'GAIA_B']
 
     # astroNN DR17 catalog
     if verb:
@@ -84,22 +85,24 @@ def import_catalogs(data_path, verb=True):
     astroNN_cols = ['APOGEE_ID', 'age_lowess_correct', 'age_total_error',
                     'TEFF', 'TEFF_ERR', 'LOGG', 'LOGG_ERR', 'C_H', 'C_H_ERR',
                     'N_H', 'N_H_ERR', 'O_H', 'O_H_ERR', 'TI_H', 'TI_H_ERR',
-                    'FE_H', 'FE_H_ERR']
+                    'FE_H', 'FE_H_ERR', 'galphi', 'galr', 'galz', 'galphi_err',
+                    'galr_err', 'galz_err']
 
     # StarHorse DR17 catalog
     if verb:
         print('Importing StarHorse DR17 catalog...')
     data = Table.read(data_path / starhorse_file, format='fits')
     starhorse_df = decode(data.to_pandas())
-    starhorse_cols = ['APOGEE_ID', 'met16', 'met50', 'met84']
+    starhorse_cols = ['APOGEE_ID', 'met16', 'met50', 'met84', 'dist16', 
+                      'dist50', 'dist84', 'GLON', 'GLAT']
 
     # BACCHUS neutron capture abundance catalog
-    # if verb:
-    #     print('Importing BACCHUS catalog...')
-    # data = Table.read(data_path / bacchus_file, format='fits', hdu=1)
-    # multd_names = [name for name in data.colnames if len(data[name].shape) <= 1]
-    # bacchus_df = decode(data[multd_names].to_pandas())
-    # bacchus_cols = ['APOGEE_ID', 'C12C13', 'C12C13_ERR_MEAS', 'C12C13_ERR_EMP']
+    if verb:
+        print('Importing BACCHUS catalog...')
+    data = Table.read(data_path / bacchus_file, format='fits', hdu=1)
+    multd_names = [name for name in data.colnames if len(data[name].shape) <= 1]
+    bacchus_df = decode(data[multd_names].to_pandas())
+    bacchus_cols = ['APOGEE_ID', 'C12C13', 'C12C13_ERR_MEAS', 'C12C13_ERR_EMP']
 
     # Consolidate into single DataFrame
     if verb:
@@ -110,8 +113,8 @@ def import_catalogs(data_path, verb=True):
                    on='APOGEE_ID', how='outer', rsuffix='_astroNN')
     cat = cat.join(starhorse_df[starhorse_cols].set_index('APOGEE_ID'),
                    on='APOGEE_ID', how='outer', rsuffix='_StarHorse')
-    # cat = cat.join(bacchus_df[bacchus_cols].set_index('APOGEE_ID'),
-    #                      on='APOGEE_ID', how='outer', rsuffix='_BACCHUS')
+    cat = cat.join(bacchus_df[bacchus_cols].set_index('APOGEE_ID'),
+                   on='APOGEE_ID', how='outer', rsuffix='_BACCHUS')
 
     # Clean up
     if verb:
@@ -128,13 +131,17 @@ def import_catalogs(data_path, verb=True):
     cat.rename(columns=mapper, inplace=True)
     cat.rename(columns={'age_lowess_correct': 'ASTRONN_AGE',
                         'age_total_error': 'ASTRONN_AGE_ERR',
-                        'met50': 'STARHORSE_M_H'}, inplace=True)
+                        'met50': 'STARHORSE_M_H', 'dist50': 'STARHORSE_DIST'}, 
+               inplace=True)
     # Combine columns
     if verb:
         print('Combining columns...')
     cat['STARHORSE_M_H_MERR'] = cat['STARHORSE_M_H'] - cat['met16']
     cat['STARHORSE_M_H_PERR'] = cat['met84'] - cat['STARHORSE_M_H']
     cat.drop(['met16', 'met84'], axis='columns', inplace=True)
+    cat['STARHORSE_DIST_MERR'] = cat['STARHORSE_DIST'] - cat['dist16']
+    cat['STARHORSE_DIST_PERR'] = cat['dist84'] - cat['STARHORSE_DIST']
+    cat.drop(['dist16', 'dist84'], axis='columns', inplace=True)
     cat['ASTRONN_C_N'] = cat['ASTRONN_C_H'] - cat['ASTRONN_N_H']
     cat['ASTRONN_C_N_ERR'] = quad_add(cat['ASTRONN_C_H_ERR'],
                                       cat['ASTRONN_N_H_ERR'])
@@ -203,7 +210,8 @@ def get_gaia_cmd(cat):
     # Use APOKASC2 A_V extinction where possible
     # cmd['APOKASC2_AV'] = cmd['APOKASC2_AV'].replace(np.nan, 0)
     # Calculate distance modulus from Gaia parallaxes (given in mas)
-    cmd['GAIA_DIST_MOD'] = 5*np.log10((1e-3 * cmd['GAIA_PARALLAX_DR2'])**-1) - 5 #+ cmd['APOKASC2_AV']
+    cmd['GAIA_DIST_DR2'] = (1e-3 * cmd['GAIA_PARALLAX_DR2'])**-1
+    cmd['GAIA_DIST_MOD'] = 5*np.log10(cmd['GAIA_DIST_DR2']) - 5 #+ cmd['APOKASC2_AV']
     # Absolute Gaia G-band magnitude
     cmd['GAIA_ABS_MAG'] = cmd['GAIA_PHOT_G_MEAN_MAG_DR2'] - cmd['GAIA_DIST_MOD']
     # Gaia BP - RP color
