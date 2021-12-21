@@ -302,3 +302,108 @@ def plot_rms_err(ax, xerrs, yerrs, loc='upper left'):
     
     ax.errorbar(x, y, xerr=xerr, yerr=yerr, color='k', capsize=2)
     return ax
+
+def galactocentric_plot(lon, lat, rad, lon_lim=None, lat_lim=None, 
+                        rad_lim=None, lon_deg=False, center_sun=False,
+                        cmap='gray', log_norm=True, grid=True):
+    """
+    Scatter plot and 2d histogram of galactocentric coordinates.
+    
+    Parameters
+    ----------
+    lon : numpy.ndarray
+        Galactocentric longitude. Assumed to be in radians unless lon_deg.
+    lat : numpy.ndarray
+        Galactocentric latitude or height. Assumed to be in degrees if 
+        center_sun is True, otherwise in kpc.
+    rad : numpy.ndarray
+        Galactic radius in kpc.
+    lon_lim : NoneType or Tuple, optional.
+        If provided, set longitude limits of plot
+    lat_lim ...
+    rad_lim ...
+    lon_deg : bool, optional.
+        If True, assumes longitude coordinates are given in degrees. Otherwise,
+        they are assumed to be in radians. Default is False.
+    center_sun : bool, optional.
+        If True, centers plot on the Sun. Default is False, which centers plot
+        on the galactic center.
+    
+    """
+    fig = plt.figure(figsize=(8, 8), constrained_layout=True)
+    gs = fig.add_gridspec(2, 20)
+    
+    if not lon_lim:
+        lon_lim = (0, 2*np.pi)
+    if not lat_lim:
+        lat_lim = (np.min(lat), np.max(lat))
+    if not rad_lim:
+        rad_lim = (0, np.max(rad))
+    
+    if lon_deg:
+        lon_deg = lon
+        lon *= np.pi/180
+        lon_lim_deg = lon_lim
+        lon_lim = (lon_lim[0] * np.pi/180, lon_lim[1] * np.pi/180)
+    else:
+        lon_deg = lon * 180/np.pi
+        lon_lim_deg = (lon_lim[0] * 180/np.pi, lon_lim[1] * 180/np.pi)
+    
+    if log_norm:
+        norm = colors.LogNorm()
+    else:
+        norm = colors.Normalize()
+        
+    if center_sun:
+        lon_label = 'Galactic longitude [deg]'
+        lat_label = 'Galactic latitude [deg]'
+        rad_label = 'Galactic radius [kpc]'
+    else:
+        lon_label = 'Galactocentric longitude [deg]'
+        lat_label = 'Galactocentric height [kpc]'
+        rad_label = 'Galactocentric radius [kpc]'
+        
+    
+    # Longitude vs radius plot, polar projection
+    ax = fig.add_subplot(gs[0,0:10], projection='polar')
+    ax.scatter(lon, lat, c='k', s=0.5)
+    hist2d = ax.hist2d(lon, lat, 
+                       bins=[np.linspace(lon_lim[0], lon_lim[1], 50),
+                             np.linspace(rad_lim[0], rad_lim[1], 50)],
+                       cmap=cmap, norm=norm, cmin=10)
+    hist, xedges, yedges, im = hist2d
+    # ax.scatter(low_age['ASTRONN_galphi'], low_age['ASTRONN_galr'], c='r', s=1, label='discrepant age')
+    if grid:
+        ax.grid()
+    ax.set_theta_zero_location('N')
+    ax.set_rmin(rad_lim[0])
+    ax.set_rmax(rad_lim[1])
+    ax.set_rorigin(0)
+    ax.set_xlim(lon_lim)
+    ax.set_title(lon_label)
+    
+    # Latitude / height vs radius plot
+    ax = fig.add_subplot(gs[0,10:])
+    scatter_hist(ax, rad, lat, xlim=rad_lim, ylim=lat_lim, vmax=np.max(hist))
+    # ax.scatter(low_age['ASTRONN_galr'], low_age['ASTRONN_galz'], c='r', s=1)
+    ax.set_xlim(rad_lim)
+    ax.set_ylim(lat_lim)
+    ax.set_xlabel(rad_label)
+    ax.set_ylabel(lat_label)
+    
+    # Longitude vs latitude, rectangular projection
+    ax = fig.add_subplot(gs[1,:19])
+    scatter_hist(ax, lon_deg, lat, xlim=lon_lim_deg, ylim=lat_lim, vmax=np.max(hist))
+    # ax.scatter(low_age['ASTRONN_galphi']*180/np.pi, low_age['ASTRONN_galz'], c='r', s=1)
+    ax.set_xlim(lon_lim)
+    ax.set_ylim(lat_lim)
+    ax.set_xlabel(lon_label)
+    ax.set_ylabel(lat_label)
+    
+    # colorbar axis
+    ax = fig.add_subplot(gs[1,19])
+    plt.colorbar(im, cax=ax)
+    ax.set_ylabel('Count')
+    
+    fig.legend(loc='upper left')
+    plt.show()
