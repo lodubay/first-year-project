@@ -50,6 +50,8 @@ cols = [name for name in aspcap_table.colnames if len(aspcap_table[name].shape) 
 aspcap_df = decode(aspcap_table[cols].to_pandas())
 # Relace NaN
 aspcap_df.replace(99.999, np.nan, inplace=True)
+# Replace '' with 'none' in columns of type 'object'
+aspcap_df.replace('', 'none', inplace=True)
 
 print('Importing astroNN catalog...')
 # Import astroNN data
@@ -122,8 +124,9 @@ apokasc_df = decode(apokasc_table[cols].to_pandas())
 apokasc_df.rename(columns={'2MASS_ID': 'APOGEE_ID'}, inplace=True)
 apokasc_df.set_index('APOGEE_ID', inplace=True)
 # Replace NaN values
-apokasc_df.replace([np.inf, -np.inf, -9999., -9999.99, -999., -999.99, '-9999'], 
+apokasc_df.replace([np.inf, -np.inf, -9999., -9999.99, -999., -999.99], 
                    np.nan, inplace=True)
+apokasc_df.replace('-9999', 'none', inplace=True)
 print('\tJoining...')
 # Join APOKASC2 to other catalogues
 cat = cat.join(apokasc_df, on='APOGEE_ID')
@@ -147,12 +150,15 @@ print('\tJoining...')
 # Join APO-K2 to other catalogues
 cat = cat.join(apok2_df, on='APOGEE_ID')
 
+# After all joins, replace NaN in 'object' columns with 'none' for consistency
+cat[cat.select_dtypes(include=object).columns] = cat.select_dtypes(include=object).replace(np.nan, 'none')
+
 print('Exporting CSVs...')
 # Export CSV
-cat.to_csv(data_path / all_data_file)
+cat.to_csv(data_path / all_data_file, index=False)
 
 # Cut in log(g)
 logg_cut = cat[cat['LOGG'] < 4]
-logg_cut.to_csv(data_path / cut_file)
+logg_cut.to_csv(data_path / cut_file, index=False)
 
 print('Done!')
