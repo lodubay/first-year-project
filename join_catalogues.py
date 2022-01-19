@@ -39,6 +39,14 @@ def decode(df):
     return df
 
 
+def quad_add(arr1, arr2):
+    """
+    Add input arrays in quadrature.
+
+    """
+    return np.sqrt(arr1**2 + arr2**2)
+
+
 print('Importing ASPCAP catalog...')
 # Import APOGEE allStar data
 aspcap_table = Table.read(data_path / aspcap_file, format='fits', hdu=1)
@@ -52,6 +60,9 @@ aspcap_df = decode(aspcap_table[cols].to_pandas())
 aspcap_df.replace(99.999, np.nan, inplace=True)
 # Replace '' with 'none' in columns of type 'object'
 aspcap_df.replace('', 'none', inplace=True)
+# Combine select abundances
+aspcap_df['C_N'] = aspcap_df['C_FE'] - aspcap_df['N_FE']
+aspcap_df['C_N_ERR'] = quad_add(aspcap_df['C_FE_ERR'], aspcap_df['N_FE_ERR'])
 
 print('Importing astroNN catalog...')
 # Import astroNN data
@@ -66,6 +77,13 @@ cols_new += ['ASTRONN_'+name.upper() for name in cols[49:]]
 # Convert to pandas DataFrame
 astroNN_df = decode(astroNN_table[cols].to_pandas())
 astroNN_df.columns = cols_new
+# Combine select abundances
+astroNN_df['ASTRONN_O_FE'] = astroNN_df['ASTRONN_O_H'] - astroNN_df['ASTRONN_FE_H']
+astroNN_df['ASTRONN_O_FE_ERR'] = quad_add(astroNN_df['ASTRONN_O_H_ERR'], astroNN_df['ASTRONN_FE_H_ERR'])
+astroNN_df['ASTRONN_C_N'] = astroNN_df['ASTRONN_C_H'] - astroNN_df['ASTRONN_N_H']
+astroNN_df['ASTRONN_C_N_ERR'] = quad_add(astroNN_df['ASTRONN_C_H_ERR'], astroNN_df['ASTRONN_N_H_ERR'])
+astroNN_df['ASTRONN_TI_FE'] = astroNN_df['ASTRONN_TI_H'] - astroNN_df['ASTRONN_FE_H']
+astroNN_df['ASTRONN_TI_FE_ERR'] = quad_add(astroNN_df['ASTRONN_TI_H_ERR'], astroNN_df['ASTRONN_FE_H_ERR'])
 print('\tJoining...')
 # Join APOGEE and astroNN tables row by row
 cat = aspcap_df.join(astroNN_df.drop('APOGEE_ID', axis=1))
