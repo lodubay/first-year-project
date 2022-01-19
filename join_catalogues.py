@@ -24,7 +24,8 @@ bacchus_file = 'dr17_nc_abund_v1_0.fits'
 apok2_file = 'new_apo_k2_updated.csv'
 
 # Name for output CSV
-cat_file = 'all_data_dr17.csv'
+all_data_file = 'dr17_all_data.csv'
+cut_file = 'dr17_cut_data.csv'
 
 def decode(df):
     """
@@ -146,8 +147,12 @@ print('\tJoining...')
 # Join APO-K2 to other catalogues
 cat = cat.join(apok2_df, on='APOGEE_ID')
 
-print('Exporting CSV...')
+print('Exporting CSVs...')
 # Export CSV
-cat.to_csv(data_path / cat_file)
+cat.to_csv(data_path / all_data_file)
+
+# Cut in log(g)
+logg_cut = cat[cat['LOGG'] < 4]
+logg_cut.to_csv(data_path / cut_file)
 
 print('Done!')
