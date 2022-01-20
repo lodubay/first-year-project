@@ -218,6 +218,22 @@ def get_gaia_cmd(cat):
     cmd['GAIA_COLOR'] = cmd['GAIA_PHOT_BP_MEAN_MAG_DR2'] - cmd['GAIA_PHOT_RP_MEAN_MAG_DR2']
     return cmd
 
+
+def get_gaia_cmd_new(cat):
+    # Select only positive parallaxes
+    cmd = cat[cat['GAIAEDR3_PARALLAX'] > 0].copy()
+    # Use APOKASC2 A_V extinction where possible
+    # cmd['APOKASC2_AV'] = cmd['APOKASC2_AV'].replace(np.nan, 0)
+    # Calculate distance modulus from Gaia parallaxes (given in mas)
+    cmd['GAIAEDR3_DIST'] = (1e-3 * cmd['GAIAEDR3_PARALLAX'])**-1
+    cmd['GAIAEDR3_DIST_MOD'] = 5*np.log10(cmd['GAIAEDR3_DIST']) - 5 #+ cmd['APOKASC2_AV']
+    # Absolute Gaia G-band magnitude
+    cmd['GAIAEDR3_ABS_MAG'] = cmd['GAIAEDR3_PHOT_G_MEAN_MAG'] - cmd['GAIAEDR3_DIST_MOD']
+    # Gaia BP - RP color
+    cmd['GAIAEDR3_COLOR'] = cmd['GAIAEDR3_PHOT_BP_MEAN_MAG'] - cmd['GAIAEDR3_PHOT_RP_MEAN_MAG']
+    return cmd
+
+
 def scatter_hist(ax, x, y, xlim=None, ylim=None, log_norm=True, cmap='gray',
                  cmin=10, vmin=None, vmax=None):
     """
