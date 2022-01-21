@@ -50,6 +50,9 @@ def quad_add(arr1, arr2):
 print('Importing ASPCAP catalog...')
 # Import APOGEE allStar data
 aspcap_table = Table.read(data_path / aspcap_file, format='fits', hdu=1)
+# Combine select abundances
+aspcap_table['C_N'] = aspcap_table['C_FE'] - aspcap_table['N_FE']
+aspcap_table['C_N_ERR'] = quad_add(aspcap_table['C_FE_ERR'], aspcap_table['N_FE_ERR'])
 # Separate paramflags into individual columns
 for i in range(len(aspcap_table['PARAMFLAG'][0])):
     aspcap_table['PARAMFLAG' + str(i)] = aspcap_table['PARAMFLAG'][:,i]
@@ -60,9 +63,6 @@ aspcap_df = decode(aspcap_table[cols].to_pandas())
 aspcap_df.replace(99.999, np.nan, inplace=True)
 # Replace '' with 'none' in columns of type 'object'
 aspcap_df.replace('', 'none', inplace=True)
-# Combine select abundances
-aspcap_df['C_N'] = aspcap_df['C_FE'] - aspcap_df['N_FE']
-aspcap_df['C_N_ERR'] = quad_add(aspcap_df['C_FE_ERR'], aspcap_df['N_FE_ERR'])
 
 print('Importing astroNN catalog...')
 # Import astroNN data
@@ -84,14 +84,19 @@ astroNN_df['ASTRONN_C_N'] = astroNN_df['ASTRONN_C_H'] - astroNN_df['ASTRONN_N_H'
 astroNN_df['ASTRONN_C_N_ERR'] = quad_add(astroNN_df['ASTRONN_C_H_ERR'], astroNN_df['ASTRONN_N_H_ERR'])
 astroNN_df['ASTRONN_TI_FE'] = astroNN_df['ASTRONN_TI_H'] - astroNN_df['ASTRONN_FE_H']
 astroNN_df['ASTRONN_TI_FE_ERR'] = quad_add(astroNN_df['ASTRONN_TI_H_ERR'], astroNN_df['ASTRONN_FE_H_ERR'])
+
 print('\tJoining...')
 # Join APOGEE and astroNN tables row by row
 cat = aspcap_df.join(astroNN_df.drop('APOGEE_ID', axis=1))
-# Drop duplicate APOGEE_IDs, keeping highest signal-to-noise (SNREV)
-cat = cat.sort_values(['APOGEE_ID', 'SNREV'])\
-         .drop_duplicates(subset='APOGEE_ID', keep='last')\
-         .sort_index()
-# Drop calibration field (APOGEE_ID = VESTA)
+# Drop duplicate APOGEE_IDs flagged by EXTRATARG bitmask
+duplicate_bitmask = 16
+cat = cat[(cat['EXTRATARG'] & duplicate_bitmask) == 0]
+# Drop completely identical entries (takes a while)
+cat = cat.drop_duplicates()
+# cat = cat.sort_values(['APOGEE_ID', 'SNREV'])\
+#          .drop_duplicates(subset='APOGEE_ID', keep='last')\
+#          .sort_index()
+# Drop calibration fields
 cat = cat[cat['FIELD'].str.contains('calibration')==False]
 
 print('Importing StarHorse catalog...')
