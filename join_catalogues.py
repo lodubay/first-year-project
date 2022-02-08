@@ -180,8 +180,10 @@ print('Exporting CSVs...')
 # Export CSV
 cat.to_csv(data_path / all_data_file, index=False)
 
-# Cut in log(g)
-logg_cut = cat[cat['LOGG'] < 4]
-logg_cut.to_csv(data_path / cut_file, index=False)
+# Cut in log(g) and T_eff to remove discrepant metallicities
+
+cut_data = cat[(cat['LOGG'] < 4) & (cat['TEFF'] < 6000) & 
+               ~((cat['LOGG'] > 3) & (cat['TEFF'] < 4000))]
+cut_data.to_csv(data_path / cut_file, index=False)
 
 print('Done!')
