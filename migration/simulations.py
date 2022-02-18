@@ -11,6 +11,7 @@ import sys
 
 _MIGRATION_MODELS_ = ["diffusion", "linear", "post-process", "sudden"]
 _EVOLUTION_MODELS_ = ["static", "insideout", "lateburst", "outerburst"]
+_DELAY_MODELS_ = ["powerlaw", "exponential", "bimodal"]
 
 def parse():
 	r"""
@@ -32,6 +33,16 @@ def parse():
 		help = "The evolutionary history to assume (Default: insideout)",
 		type = str,
 		default = "insideout")
+
+	parser.add_argument("--RIa",
+		help = "The SN Ia delay-time distribution to assume (Default: powerlaw)",
+		type = str,
+		default = "powerlaw")
+	
+	parser.add_argument("--minimum-delay",
+		 help = "The minimum SN Ia delay time in Gyr (Default: 0.04)",
+		 type = float,
+		 default = 0.04)
 
 	parser.add_argument("--dt",
 		help = "Timestep size in Gyr. (Default: 0.01)",
@@ -80,7 +91,9 @@ def model(args):
 	)
 	kwargs = dict(
 		name = args.name,
-		spec = args.evolution
+		spec = args.evolution,
+		RIa = args.RIa,
+		delay = args.minimum_delay
 	)
 	if args.migration == "post-process":
 		kwargs["simple"] = True

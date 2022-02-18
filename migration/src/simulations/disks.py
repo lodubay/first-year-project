@@ -20,6 +20,7 @@ vice.yields.sneia.settings['fe'] *= 10**0.1
 from .._globals import END_TIME, MAX_SF_RADIUS, ZONE_WIDTH
 from . import migration
 from . import models
+from dtd import exponential, powerlaw, bimodal
 from .models.utils import get_bin_number, interpolate
 from .models.gradient import gradient
 import math as m
@@ -58,6 +59,16 @@ class diskmodel(vice.milkyway):
 		- "sudden"
 		- "post-process"
 
+	delay : ``float`` [default : 0.04]
+		Minimum SN Ia delay time in Gyr.
+	RIa : ``str`` [default : "powerlaw"]
+		A keyword denoting the time-dependence of the SN Ia rate.
+		Allowed values:
+			
+		- "powerlaw"
+		- "exponential"
+		- "bimodal"
+	
 	kwargs : varying types
 		Other keyword arguments to pass ``vice.milkyway``.
 
@@ -65,7 +76,8 @@ class diskmodel(vice.milkyway):
 	"""
 
 	def __init__(self, zone_width = 0.1, name = "diskmodel", spec = "static",
-		verbose = True, migration_mode = "diffusion", **kwargs):
+		verbose = True, migration_mode = "diffusion", delay = 0.04, 
+		RIa = "powerlaw", **kwargs):
 		super().__init__(zone_width = zone_width, name = name,
 			verbose = verbose, **kwargs)
 		if self.zone_width <= 0.2 and self.dt <= 0.02 and self.n_stars >= 6:
@@ -79,6 +91,9 @@ class diskmodel(vice.milkyway):
 		self.evolution = star_formation_history(spec = spec,
 			zone_width = zone_width)
 		self.mode = "sfr"
+		for zone in self.zones:
+			zone.delay = delay
+			zone.RIa = delay_time_distribution(dist=RIa)
 
 
 	def run(self, *args, **kwargs):
@@ -173,8 +188,29 @@ class star_formation_history:
 class delay_time_distribution:
 	"""
 	The delay time distribution (DTD) of Type Ia supernovae (SNe Ia) in the
-	model galaxy. This object will be used as the ``delay`` attribute of the 
-	``diskmodel``.
+	model galaxy. This object will be used as the ``RIa`` attribute of each zone 
+	in the ``diskmodel``.
+	
+	Parameters
+	----------'
+	dist : str [default: "powerlaw"]
+		A keyword denoting the delay-time distribution of SNe Ia.
+		
+	Calling
+	-------
+	- Parameters
+
+		time : ``float``
+			Simulation time in Gyr.
 	"""
 	
-	def __init__(self, )
+	def __init__(self, dist="powerlaw"):
+		self.model = {
+			"powerlaw": powerlaw,
+			"exponential": exponential,
+			"bimodal": bimodal
+		}[dist.lower()]()
+	
+	def __call__(self, time):
+		return self.model(time)
+		

@@ -6,7 +6,7 @@ Created on Fri Feb 18 11:15:46 2022
 """
 
 import math as m
-import matplotlib.pyplot as plt
+from .._globals import END_TIME
 
 class exponential:
 	
@@ -96,13 +96,15 @@ class bimodal(gaussian, exponential):
 		Maximum simulation time in Gyr.		
 	"""
 	
-	def __init__(self, t50=0.1, center=0.05, stdev=0.01, timescale=3, tmax=13.2):
+	def __init__(self, t50=0.1, center=0.05, stdev=0.01, timescale=3):
 		self.t50 = t50
 		gaussian.__init__(self, center=center, stdev=stdev)
 		exponential.__init__(self, timescale=timescale)
 		# Set Gaussian area = exponential area
-		gauss_sum = sum([gaussian.__call__(self, t50/100 * t) * t50/100 for t in range(100)])
-		exp_sum = sum([exponential.__call__(self, (tmax-t50)/100*t + t50) * (tmax-t50)/100 for t in range(100)])
+		gauss_sum = sum([gaussian.__call__(self, t50/100 * t) * t50/100 \
+				   for t in range(100)])
+		exp_sum = sum([exponential.__call__(self, (END_TIME-t50)/100*t + t50) \
+				 * (END_TIME-t50)/100 for t in range(100)])
 		self.scale_gaussian = exp_sum / gauss_sum
 	
 	def __call__(self, time):
@@ -113,6 +115,7 @@ class bimodal(gaussian, exponential):
 
 
 def test_plot():
+	import matplotlib.pyplot as plt
 	fig, ax = plt.subplots()
 	dtds = {
 			'exponential': exponential,
