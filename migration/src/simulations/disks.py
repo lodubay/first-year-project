@@ -20,7 +20,7 @@ vice.yields.sneia.settings['fe'] *= 10**0.1
 from .._globals import END_TIME, MAX_SF_RADIUS, ZONE_WIDTH
 from . import migration
 from . import models
-from dtd import exponential, powerlaw, bimodal
+from .dtd import exponential, powerlaw, bimodal
 from .models.utils import get_bin_number, interpolate
 from .models.gradient import gradient
 import math as m
