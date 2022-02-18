@@ -1,3 +1,6 @@
+# Migration run outputs
+migration/outputs/**
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

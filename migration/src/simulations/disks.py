@@ -169,3 +169,12 @@ class star_formation_history:
 					self._evol[-2](time), self._radii[-1], self._evol[-1](time),
 					radius)
 
+
+class delay_time_distribution:
+	"""
+	The delay time distribution (DTD) of Type Ia supernovae (SNe Ia) in the
+	model galaxy. This object will be used as the ``delay`` attribute of the 
+	``diskmodel``.
+	"""
+	
+	def __init__(self, )
