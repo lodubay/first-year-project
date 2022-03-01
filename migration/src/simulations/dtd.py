@@ -15,7 +15,7 @@ class exponential:
 	
 	Parameters
 	----------
-	timescale : float [dfault: 3]
+	timescale : float [default: 3]
 		The e-folding timescale in Gyr of the exponential.
 	norm : float [default: 1]
 		The normalization of the exponential, i.e., the value at t=0.
@@ -48,6 +48,37 @@ class powerlaw:
 	
 	def __call__(self, time):
 		return self.norm * time ** self.slope
+
+
+class broken_powerlaw:
+	"""
+	A two-part broken power-law delay-time distribution of SNe Ia. The default
+	setting is a flat distribution (slope of 0) before the time of separation
+	and the standard -1.1 slope after.
+	    
+	Parameters
+	----------
+	tsplit : float [default: 0.2]
+		Time in Gyr separating the two power-law components.
+	slope1 : float [default: 0]
+		Slope of the early power-law component.
+	slope2 : float [default: -1.1]
+		Slope of the late power-law component.
+	norm : float [default: 1]
+		Normalization of the second power-law component.
+
+	"""
+	def __init__(self, tsplit=0.2, slope1=0, slope2=-1.1, norm=1):
+		self.tsplit = tsplit
+		self.plaw2 = powerlaw(slope=slope2, norm=norm)
+		norm1 = norm * tsplit ** (slope2 - slope1)
+		self.plaw1 = powerlaw(slope=slope1, norm=norm1)
+
+	def __call__(self, time):
+		if time > self.tsplit:
+			return self.plaw2(time)
+		else:
+			return self.plaw1(time)
 
 
 class gaussian:
