@@ -21,7 +21,7 @@ class exponential:
 		The normalization of the exponential, i.e., the value at t=0.
 	"""
 	
-	def __init__(self, timescale=3, norm=1):
+	def __init__(self, timescale=1.5, norm=1):
 		self.timescale = timescale
 		self.norm = norm
 	
