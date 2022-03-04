@@ -33,7 +33,7 @@ class LinearExponential(Exponential):
     Exponential class.
 
     """
-    def __init__(self, timescale=1, coeff=1, peak=1):
+    def __init__(self, timescale=1, coeff=1):
         super().__init__(timescale, coeff)
 
     def __call__(self, time):
