@@ -28,11 +28,16 @@ class Exponential:
 
 
 class LinearExponential(Exponential):
-    def __init__(self, timescale=1, coeff=1):
+    """
+    A normalized linear-exponential function. Attributes are inherited from the
+    Exponential class.
+
+    """
+    def __init__(self, timescale=1, coeff=1, peak=1):
         super().__init__(timescale, coeff)
 
     def __call__(self, time):
-        return time/self.timescale * super().__call__(time)
+        return (time / self.timescale) * super().__call__(time)
 
 
 class PowerLaw:
