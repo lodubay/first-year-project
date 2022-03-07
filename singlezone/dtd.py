@@ -5,7 +5,7 @@ functions.
 """
 
 from _globals import END_TIME
-from functions import Exponential, PowerLaw, Gaussian
+from utils import ExponentialFunction, PowerLawFunction, GaussianFunction
 
 
 class Bimodal:
@@ -48,11 +48,12 @@ class Bimodal:
             Maximum delay time in Gyr for integration purposes
 
         """
-        self.prompt = Gaussian(center=center, stdev=stdev, coeff=0.5)
-        self.tardy = Exponential(timescale=timescale, coeff=0.5)
+        self.prompt = GaussianFunction(center=center, stdev=stdev,
+                                       coeff=0.5e-9)
+        self.tardy = ExponentialFunction(timescale=timescale, coeff=0.5e-9)
         self.tsplit = self.solve_tsplit()
         self.norm = 1
-        self.norm *= self.normalize(tmin, tmax)
+        self.norm *= 1e-9 * self.normalize(tmin, tmax)
 
     def __call__(self, time):
         """
@@ -66,7 +67,7 @@ class Bimodal:
         Returns
         -------
         RIa : float
-            Normalized SN Ia rate per solar mass per Gyr.
+            Normalized SN Ia rate per solar mass per year.
 
         """
         if time < self.tsplit:
@@ -161,8 +162,10 @@ class BrokenPowerLaw:
         """
         self.tsplit = tsplit
         # Initialize both power-law functions
-        plaw1 = PowerLaw(slope=slope1, tmin=tmin, tmax=tsplit)
-        plaw2 = PowerLaw(slope=slope2, tmin=tsplit, tmax=tmax)
+        plaw1 = PowerLawFunction(slope=slope1, tmin=tmin, tmax=tsplit,
+                                 coeff=1e-9)
+        plaw2 = PowerLawFunction(slope=slope2, tmin=tsplit, tmax=tmax,
+                                 coeff=1e-9)
         # Calculate new normalization coefficients
         norm1 = (plaw1.norm**-1 + tsplit**(slope1-slope2) * plaw2.norm**-1)**-1
         plaw1.norm = norm1
@@ -183,7 +186,7 @@ class BrokenPowerLaw:
         Returns
         -------
         RIa : float
-            Normalized SN Ia rate per solar mass per Gyr.
+            Normalized SN Ia rate per solar mass per year.
 
         """
         if time < self.tsplit:
@@ -193,14 +196,14 @@ class BrokenPowerLaw:
         return RIa
 
 
-class Exponential(Exponential):
-    def __init__(self, timescale=1.5, **kwargs):
-        super().__init__(timescale=timescale, **kwargs)
+class Exponential(ExponentialFunction):
+    def __init__(self, timescale=1.5):
+        super().__init__(timescale=timescale, coeff=1e-9)
 
 
-class PowerLaw(PowerLaw):
-    def __init__(self, slope=-1.1, **kwargs):
-        super().__init__(slope=slope, **kwargs)
+class PowerLaw(PowerLawFunction):
+    def __init__(self, slope=-1.1, tmin=0.04, tmax=END_TIME):
+        super().__init__(slope=slope, coeff=1e-9, tmin=tmin, tmax=tmax)
 
 
 def test_plot():
@@ -211,10 +214,10 @@ def test_plot():
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
     dtds = {
+            'Power-Law': PowerLaw(),
+            'Broken Power-Law': BrokenPowerLaw(),
             'Exponential (1.5 Gyr)': Exponential(timescale=1.5),
             'Exponential (3 Gyr)': Exponential(timescale=3),
-            'Power-Law': PowerLaw(slope=-1.1, tmin=0.04, tmax=END_TIME),
-            'Broken Power-Law': BrokenPowerLaw(),
             'Bimodal': Bimodal()
     }
     time = [0.001*i for i in range(40, 13201)]
@@ -223,8 +226,9 @@ def test_plot():
         ax.plot(time, [func(t) for t in time], label=dist)
     ax.set_xscale('log')
     ax.set_yscale('log')
+    ax.set_ylim((1e-12, 1e-7))
     ax.set_xlabel('Time [Gyr]')
-    ax.set_ylabel('Normalized SN Ia Rate [Msun^-1 Gyr^-1]')
+    ax.set_ylabel(r'Normalized SN Ia Rate [$M_\odot^{-1}$ yr$^{-1}$]')
     ax.legend()
     plt.show()
 

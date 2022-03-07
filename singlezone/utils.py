@@ -7,7 +7,7 @@ models.
 
 import math as m
 
-class Exponential:
+class ExponentialFunction:
     """
     A generic normalized exponentially-declining function of time.
 
@@ -24,10 +24,10 @@ class Exponential:
         self.coeff = coeff
 
     def __call__(self, time):
-        return self.coeff / self.timescale * m.exp(-time / self.timescale)
+        return (self.coeff / self.timescale) * m.exp(-time / self.timescale)
 
 
-class LinearExponential(Exponential):
+class LinearExponentialFunction(ExponentialFunction):
     """
     A normalized linear-exponential function. Attributes are inherited from the
     Exponential class.
@@ -40,7 +40,7 @@ class LinearExponential(Exponential):
         return (time / self.timescale) * super().__call__(time)
 
 
-class PowerLaw:
+class PowerLawFunction:
     """
     A generic normalized power-law function of time.
 
@@ -67,7 +67,7 @@ class PowerLaw:
         return intslope / (tmax ** intslope - tmin ** intslope)
 
 
-class Gaussian:
+class GaussianFunction:
     """
     A generic normalized Gaussian function of time.
 
