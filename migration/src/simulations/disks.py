@@ -64,11 +64,12 @@ class diskmodel(vice.milkyway):
 	RIa : ``str`` [default : "powerlaw"]
 		A keyword denoting the time-dependence of the SN Ia rate.
 		Allowed values:
-			
+
 		- "powerlaw"
+        - "powerlaw_steep"
 		- "exponential"
 		- "bimodal"
-	
+
 	kwargs : varying types
 		Other keyword arguments to pass ``vice.milkyway``.
 
@@ -76,7 +77,7 @@ class diskmodel(vice.milkyway):
 	"""
 
 	def __init__(self, zone_width = 0.1, name = "diskmodel", spec = "static",
-		verbose = True, migration_mode = "diffusion", delay = 0.04, 
+		verbose = True, migration_mode = "diffusion", delay = 0.04,
 		RIa = "powerlaw", **kwargs):
 		super().__init__(zone_width = zone_width, name = name,
 			verbose = verbose, **kwargs)
@@ -188,14 +189,14 @@ class star_formation_history:
 class delay_time_distribution:
 	"""
 	The delay time distribution (DTD) of Type Ia supernovae (SNe Ia) in the
-	model galaxy. This object will be used as the ``RIa`` attribute of each zone 
+	model galaxy. This object will be used as the ``RIa`` attribute of each zone
 	in the ``diskmodel``.
-	
+
 	Parameters
 	----------'
 	dist : str [default: "powerlaw"]
 		A keyword denoting the delay-time distribution of SNe Ia.
-		
+
 	Calling
 	-------
 	- Parameters
@@ -203,14 +204,15 @@ class delay_time_distribution:
 		time : ``float``
 			Simulation time in Gyr.
 	"""
-	
+
 	def __init__(self, dist="powerlaw"):
 		self.model = {
-			"powerlaw": powerlaw,
-			"exponential": exponential,
-			"bimodal": bimodal
+			"powerlaw": powerlaw(),
+            "powerlaw_steep": powerlaw(slope=-1.4),
+			"exponential": exponential(),
+			"bimodal": bimodal()
 		}[dist.lower()]()
-	
+
 	def __call__(self, time):
 		return self.model(time)
-		
+

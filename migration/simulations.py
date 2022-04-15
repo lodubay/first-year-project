@@ -11,7 +11,7 @@ import sys
 
 _MIGRATION_MODELS_ = ["diffusion", "linear", "post-process", "sudden"]
 _EVOLUTION_MODELS_ = ["static", "insideout", "lateburst", "outerburst"]
-_DELAY_MODELS_ = ["powerlaw", "exponential", "bimodal"]
+_DELAY_MODELS_ = ["powerlaw", "powerlaw_steep", "exponential", "bimodal"]
 
 def parse():
 	r"""
@@ -38,7 +38,7 @@ def parse():
 		help = "The SN Ia delay-time distribution to assume (Default: powerlaw)",
 		type = str,
 		default = "powerlaw")
-	
+
 	parser.add_argument("--minimum-delay",
 		 help = "The minimum SN Ia delay time in Gyr (Default: 0.04)",
 		 type = float,
