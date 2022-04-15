@@ -211,7 +211,7 @@ class delay_time_distribution:
             "powerlaw_steep": powerlaw(slope=-1.4),
 			"exponential": exponential(),
 			"bimodal": bimodal()
-		}[dist.lower()]()
+		}[dist.lower()]
 
 	def __call__(self, time):
 		return self.model(time)
